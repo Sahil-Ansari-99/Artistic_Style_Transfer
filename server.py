@@ -5,7 +5,8 @@ import base64
 import os
 import psutil
 from StyleTransfer import NST
-from PIL import Image
+from PIL import Image, ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class Server:
@@ -49,11 +50,14 @@ class Server:
         obj.set_client_port(addr)
         while connected:
             msg_length = conn.recv(self.HEADER).decode(self.FORMAT)
+            print('Message Length Received:', msg_length)
             if msg_length:
                 msg_length = int(msg_length)
-                msg = conn.recv(msg_length).decode(self.FORMAT)
+                # msg = conn.recv(msg_length).decode(self.FORMAT)
+                msg = self.receive_all_data(msg_length, conn)
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
+                print(addr, len(msg))
                 print(addr, msg)
                 ret = self.handle_message(msg, addr, obj).encode(self.FORMAT)
                 ret_len = len(ret)
@@ -61,9 +65,32 @@ class Server:
                 send_length += b' ' * (self.HEADER - len(send_length))
                 conn.send(send_length)
                 conn.send(ret)
+            else:
+                connected = False
         self.delete_client_files(addr)
         self.connected_clients.remove(addr)
         conn.close()
+
+    def receive_all_data(self, msg_length, conn):
+        msg = ''
+        curr_length = 0
+        while curr_length < msg_length:
+            part = conn.recv(msg_length).decode(self.FORMAT)
+            curr_length += len(part)
+            curr = part
+            # if '\n' in part:
+            #     parts = part.split('\n')
+            #     for s in parts:
+            #         print(s)
+            #         curr += s
+            # else:
+            #     curr = part
+            print(len(curr))
+            msg += curr
+            if len(part) == 0:
+                break
+        print('Received all data...')
+        return msg
 
     def handle_message(self, msg, addr, obj):
         self.memory_usage()
@@ -87,10 +114,17 @@ class Server:
         return 'RECEIVED'
 
     def process_image(self, pic, form, save_name):
-        pic_ = pic[len(form)+1:]
+        print('Processing Image...')
+        pic_ = pic[len(form):]
+        print(pic_)
+        rem = len(pic_) % 4
+        if rem != 0:
+            pic_ += '=' * rem
         pic_bytes = io.BytesIO(base64.b64decode(pic_))
+        pic_bytes.seek(0)
         img = Image.open(pic_bytes)
         img.save(save_name)
+        print(save_name, 'saved...')
 
     def encode_image(self, addr):
         file_name = f'res_{addr}.jpg'

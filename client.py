@@ -10,7 +10,7 @@ class Client:
         self.PORT = 8080
         self.FORMAT = 'utf-8'
         self.DISCONNECT_MESSAGE = '!DISCONNECT'
-        self.SERVER = '192.168.1.4'
+        self.SERVER = '192.168.1.6'
         self.STYLE_FORMAT = '$STYLE'
         self.CONTENT_FORMAT = '$CONTENT'
         self.START = '$START'
@@ -29,7 +29,7 @@ class Client:
             elif msg == 'style':
                 self.send_pic('starry_night.jpg', self.STYLE_FORMAT)
             elif msg == 'content':
-                self.send_pic('dog_image.jpg', self.CONTENT_FORMAT)
+                self.send_pic('eiffel_tower.jpg', self.CONTENT_FORMAT)
             elif msg == 'start':
                 self.send(self.START)
             else:
@@ -41,17 +41,28 @@ class Client:
         msg_length = len(msg)
         send_length = str(msg_length).encode(self.FORMAT)
         send_length += b' ' * (self.HEADER - len(send_length))
-        print('Send Length:', send_length)
+        print('Send Length:', send_length, len(send_length))
+        print(message)
         self.client.send(send_length)
         self.client.send(message)
         return_msg_len = self.client.recv(self.HEADER).decode(self.FORMAT)
         if return_msg_len:
             return_msg_len = int(return_msg_len)
-            return_msg = self.client.recv(return_msg_len).decode(self.FORMAT)
+            # return_msg = self.client.recv(return_msg_len).decode(self.FORMAT)
+            return_msg = self.receive_all_data(return_msg_len, self.client)
             if return_msg.startswith(self.RESULT_FORMAT):
                 print(return_msg)
                 self.process_image(return_msg)
             print(return_msg)
+
+    def receive_all_data(self, msg_length, conn):
+        msg = ''
+        while len(msg) < msg_length:
+            part = conn.recv(msg_length).decode(self.FORMAT)
+            print('Part length:', len(part))
+            msg += part
+        print('Received all data...')
+        return msg
 
     def send_pic(self, name, img_type):
         pic_file = open(name, 'rb')
