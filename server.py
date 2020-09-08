@@ -58,7 +58,6 @@ class Server:
                 if msg == self.DISCONNECT_MESSAGE:
                     connected = False
                 print(addr, len(msg))
-                print(addr, msg)
                 ret = self.handle_message(msg, addr, obj).encode(self.FORMAT)
                 ret_len = len(ret)
                 send_length = str(ret_len).encode(self.FORMAT)
@@ -105,6 +104,7 @@ class Server:
             self.process_image(msg, self.CONTENT_FORMAT, save_name)
             obj.set_content_img(save_name)
         if msg == self.START:
+            print(addr, 'Starting Style transfer...')
             res = obj.start_style_transfer()
             if res:
                 print('sending result')
@@ -116,7 +116,6 @@ class Server:
     def process_image(self, pic, form, save_name):
         print('Processing Image...')
         pic_ = pic[len(form):]
-        print(pic_)
         rem = len(pic_) % 4
         if rem != 0:
             pic_ += '=' * rem

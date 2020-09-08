@@ -107,7 +107,7 @@ class NST:
         stylized_image = self.run_style_transform(blended_bottleneck, content_image)
         save_name = f'res_{self.client_port}.jpg'
         self.save_image(stylized_image, save_name)
-        self.show_image(stylized_image)
+        # self.show_image(stylized_image)
         self.memory_usage()
         if os.path.isfile(save_name):
             return True
